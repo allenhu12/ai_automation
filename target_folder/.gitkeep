@@ -1,0 +1,11 @@
+# Target Folder
+
+This folder contains analysis results and generated files.
+
+Generated files include:
+- parsed_*.json - Structured JIRA data extracted from XML
+- prompt_*.md - Analysis prompts for Cursor AI
+- analysis_results_*.json - Manual analysis results (created by user)
+- test_*.robot - Generated Robot Framework test cases (optional)
+
+File access via web interface download links or direct file system access.

@@ -1,0 +1,7 @@
+# Source Folder
+
+This folder contains uploaded JIRA XML files for processing.
+
+Files are automatically saved here when uploaded via the web interface at http://localhost:8000
+
+File naming pattern: jira_YYYYMMDD_HHMMSS_original_filename.xml
