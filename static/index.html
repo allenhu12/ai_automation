@@ -268,6 +268,7 @@
             <h2>📊 Analysis Results</h2>
             <div style="text-align: center; margin-bottom: 15px;">
                 <button class="btn" id="refreshBtn">🔄 Refresh Results</button>
+                <button class="btn btn-danger" id="clearBtn" style="margin-left: 10px;">🗑️ Clear Results</button>
             </div>
             
             <div id="resultsContainer">
@@ -322,6 +323,7 @@
         const uploadStatus = document.getElementById('uploadStatus');
         const loading = document.getElementById('loading');
         const refreshBtn = document.getElementById('refreshBtn');
+        const clearBtn = document.getElementById('clearBtn');
         const resultsContainer = document.getElementById('resultsContainer');
         const systemStatus = document.getElementById('systemStatus');
         
@@ -333,6 +335,7 @@
         fileInput.addEventListener('change', handleFileSelect);
         uploadBtn.addEventListener('click', uploadFile);
         refreshBtn.addEventListener('click', loadResults);
+        clearBtn.addEventListener('click', clearResults);
         
         function handleDragOver(e) {
             e.preventDefault();
@@ -414,6 +417,14 @@
             }
         }
         
+        function clearResults() {
+            resultsContainer.innerHTML = `
+                <div class="status info">
+                    Results cleared. Click "Refresh Results" to reload analysis data or upload a new file to get started.
+                </div>
+            `;
+        }
+        
         async function loadResults() {
             try {
                 const response = await fetch('/results');
@@ -441,6 +452,10 @@
             const resultsHTML = results.map(result => {
                 const data = result.result_data;
                 const summary = data.analysis_summary || {};
+                const existingAnalysis = data.existing_test_analysis || {};
+                const existingTestsCount = existingAnalysis.test_cases_found ? existingAnalysis.test_cases_found.length : 0;
+                const gapsCount = existingAnalysis.coverage_gaps_identified ? existingAnalysis.coverage_gaps_identified.length : 0;
+                
                 return `
                     <div class="result-item">
                         <div class="result-header">
@@ -452,12 +467,15 @@
                             <strong>✅ Covered Issues:</strong> ${summary.covered_issues || 0}<br>
                             <strong>❌ Uncovered Issues:</strong> ${summary.uncovered_issues || 0}<br>
                             <strong>🔥 High Priority Gaps:</strong> ${summary.high_priority_gaps || 0}<br>
-                            <strong>🆕 Test Cases Generated:</strong> ${summary.test_cases_generated || 0}
+                            <strong>🆕 Test Cases Generated:</strong> ${summary.test_cases_generated || 0}<br>
+                            <strong>🔍 Existing Tests Found:</strong> ${existingTestsCount}<br>
+                            <strong>⚠️ Coverage Gaps Identified:</strong> ${gapsCount}
                         </div>
                         <div class="download-links">
                             <a href="${result.download_links.json}" target="_blank">📋 Download JSON</a>
                             ${result.has_robot_file ? `<a href="${result.download_links.robot}" target="_blank">🤖 Download Robot Tests</a>` : ''}
                             <button class="view-details-btn" onclick="viewCoverageDetails('${result.filename}')">👁️ View Coverage Details</button>
+                            <button class="view-details-btn" onclick="viewExistingTestsDetails('${result.filename}')" style="margin-left: 5px;">🔍 View Existing Tests</button>
                         </div>
                     </div>
                 `;
@@ -568,6 +586,41 @@
                     detailsHTML += `</div>`;
                 }
                 
+                // Show generated tests if any
+                if (data.generated_tests && data.generated_tests.length > 0) {
+                    detailsHTML += `
+                        <h4>🆕 Generated Test Cases (${data.generated_tests.length})</h4>
+                        <div style="margin-left: 20px;">
+                    `;
+                    
+                    data.generated_tests.forEach(test => {
+                        const issueKeys = test.issue_keys ? test.issue_keys.join(', ') : 'N/A';
+                        const priorityColor = test.priority === 'High' ? '#dc3545' : test.priority === 'Medium' ? '#ffc107' : '#28a745';
+                        
+                        detailsHTML += `
+                            <div style="margin-bottom: 15px; padding: 15px; background: #e8f4fd; border: 1px solid #b8daff; border-radius: 5px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                    <strong style="color: #2c3e50;">${test.test_name}</strong>
+                                    <span style="background: ${priorityColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                                        ${test.priority || 'Unknown'} Priority
+                                    </span>
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>🎯 Issue Keys:</strong> ${issueKeys}
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>🤖 Robot Code Preview:</strong>
+                                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 10px; margin-top: 5px; max-height: 200px; overflow-y: auto;">
+                                        <pre style="margin: 0; font-size: 12px; white-space: pre-wrap;">${test.robot_code ? test.robot_code.substring(0, 500) + (test.robot_code.length > 500 ? '...\n\n[Code truncated - download full file for complete test]' : '') : 'No code available'}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    detailsHTML += `</div>`;
+                }
+                
                 detailsHTML += `</div>`;
                 
                 // Show in a modal or alert (simplified version)
@@ -595,6 +648,118 @@
                 
             } catch (error) {
                 alert('Error loading coverage details: ' + error.message);
+            }
+        }
+        
+        async function viewExistingTestsDetails(filename) {
+            try {
+                // Fetch the JSON result file
+                const response = await fetch(`/download/${filename}`);
+                const data = await response.json();
+                
+                const existingAnalysis = data.existing_test_analysis || {};
+                const testCasesFound = existingAnalysis.test_cases_found || [];
+                const coverageGaps = existingAnalysis.coverage_gaps_identified || [];
+                
+                // Create a detailed view for existing tests
+                let detailsHTML = `
+                    <h3>🔍 Existing Test Analysis</h3>
+                    <div style="margin: 20px 0;">
+                `;
+                
+                // Show existing test cases found
+                if (testCasesFound.length > 0) {
+                    detailsHTML += `
+                        <h4>📋 Existing Test Cases Found (${testCasesFound.length})</h4>
+                        <div style="margin-left: 20px;">
+                    `;
+                    
+                    testCasesFound.forEach(test => {
+                        const confidencePercent = Math.round(test.confidence * 100);
+                        const confidenceColor = confidencePercent >= 70 ? '#155724' : confidencePercent >= 40 ? '#856404' : '#721c24';
+                        
+                        detailsHTML += `
+                            <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                    <strong style="color: #2c3e50;">${test.test_case_id || 'No ID'}: ${test.test_name}</strong>
+                                    <span style="background: ${confidenceColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                                        ${confidencePercent}% match
+                                    </span>
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>📁 File:</strong> <code style="background: #e9ecef; padding: 2px 4px; border-radius: 3px; font-size: 12px;">${test.test_file}</code>
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong>📝 Coverage:</strong> ${test.coverage_description}
+                                </div>
+                                ${test.relevant_sections && test.relevant_sections.length > 0 ? `
+                                    <div>
+                                        <strong>🎯 Relevant Sections:</strong>
+                                        <ul style="margin: 5px 0; padding-left: 20px;">
+                                            ${test.relevant_sections.map(section => `<li style="font-size: 13px; color: #495057;">${section}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    detailsHTML += `</div>`;
+                }
+                
+                // Show coverage gaps identified
+                if (coverageGaps.length > 0) {
+                    detailsHTML += `
+                        <h4>⚠️ Coverage Gaps Identified (${coverageGaps.length})</h4>
+                        <div style="margin-left: 20px;">
+                    `;
+                    
+                    coverageGaps.forEach((gap, index) => {
+                        detailsHTML += `
+                            <div style="margin-bottom: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+                                <strong style="color: #856404;">Gap ${index + 1}:</strong> ${gap}
+                            </div>
+                        `;
+                    });
+                    
+                    detailsHTML += `</div>`;
+                }
+                
+                if (testCasesFound.length === 0 && coverageGaps.length === 0) {
+                    detailsHTML += `
+                        <div style="text-align: center; padding: 20px; color: #6c757d;">
+                            No existing test analysis data available.
+                        </div>
+                    `;
+                }
+                
+                detailsHTML += `</div>`;
+                
+                // Show in a modal
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+                    max-width: 90%;
+                    max-height: 80%;
+                    overflow-y: auto;
+                    z-index: 1000;
+                `;
+                
+                modal.innerHTML = detailsHTML + `
+                    <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+                `;
+                
+                document.body.appendChild(modal);
+                
+            } catch (error) {
+                alert('Error loading existing tests details: ' + error.message);
             }
         }
         
