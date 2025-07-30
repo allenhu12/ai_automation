@@ -164,7 +164,7 @@
             margin-top: 10px;
         }
         
-        .download-links a {
+        .download-links a, .view-details-btn {
             display: inline-block;
             margin-right: 10px;
             padding: 5px 10px;
@@ -173,10 +173,20 @@
             text-decoration: none;
             border-radius: 3px;
             font-size: 12px;
+            border: none;
+            cursor: pointer;
         }
         
         .download-links a:hover {
             background: #138496;
+        }
+        
+        .view-details-btn {
+            background: #6c757d;
+        }
+        
+        .view-details-btn:hover {
+            background: #5a6268;
         }
         
         .workflow-steps {
@@ -438,13 +448,16 @@
                             <span>${summary.analysis_date || 'No date'}</span>
                         </div>
                         <div class="result-details">
-                            <strong>Issues Analyzed:</strong> ${summary.total_issues || 0}<br>
-                            <strong>High Priority Gaps:</strong> ${summary.high_priority_gaps || 0}<br>
-                            <strong>Test Cases Generated:</strong> ${summary.test_cases_generated || 0}
+                            <strong>Total Issues:</strong> ${summary.total_issues || 0}<br>
+                            <strong>✅ Covered Issues:</strong> ${summary.covered_issues || 0}<br>
+                            <strong>❌ Uncovered Issues:</strong> ${summary.uncovered_issues || 0}<br>
+                            <strong>🔥 High Priority Gaps:</strong> ${summary.high_priority_gaps || 0}<br>
+                            <strong>🆕 Test Cases Generated:</strong> ${summary.test_cases_generated || 0}
                         </div>
                         <div class="download-links">
                             <a href="${result.download_links.json}" target="_blank">📋 Download JSON</a>
                             ${result.has_robot_file ? `<a href="${result.download_links.robot}" target="_blank">🤖 Download Robot Tests</a>` : ''}
+                            <button class="view-details-btn" onclick="viewCoverageDetails('${result.filename}')">👁️ View Coverage Details</button>
                         </div>
                     </div>
                 `;
@@ -485,6 +498,104 @@
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        async function viewCoverageDetails(filename) {
+            try {
+                // Fetch the JSON result file
+                const response = await fetch(`/download/${filename}`);
+                const data = await response.json();
+                
+                // Create a detailed view
+                let detailsHTML = `
+                    <h3>📊 Coverage Analysis Details</h3>
+                    <div style="margin: 20px 0;">
+                `;
+                
+                // Show covered issues if any
+                if (data.covered_issues && data.covered_issues.length > 0) {
+                    detailsHTML += `
+                        <h4>✅ Covered Issues (${data.covered_issues.length})</h4>
+                        <div style="margin-left: 20px;">
+                    `;
+                    
+                    data.covered_issues.forEach(issue => {
+                        detailsHTML += `
+                            <div style="margin-bottom: 15px; padding: 10px; background: #d4edda; border-radius: 5px;">
+                                <strong>${issue.issue_key}: ${issue.issue_title}</strong><br>
+                                <span style="color: #155724;">Status: ${issue.coverage_status}</span><br>
+                                <strong>Existing Test Cases:</strong>
+                                <ul style="margin: 5px 0;">
+                        `;
+                        
+                        issue.existing_test_cases.forEach(test => {
+                            detailsHTML += `
+                                <li>
+                                    <strong>${test.test_case_id || 'No ID'}</strong>: ${test.test_name}<br>
+                                    <small>File: ${test.test_file} | Confidence: ${(test.confidence * 100).toFixed(0)}%</small><br>
+                                    <small>${test.coverage_description}</small>
+                                </li>
+                            `;
+                        });
+                        
+                        detailsHTML += `
+                                </ul>
+                            </div>
+                        `;
+                    });
+                    
+                    detailsHTML += `</div>`;
+                }
+                
+                // Show uncovered issues
+                if (data.coverage_gaps && data.coverage_gaps.length > 0) {
+                    detailsHTML += `
+                        <h4>❌ Uncovered Issues (${data.coverage_gaps.length})</h4>
+                        <div style="margin-left: 20px;">
+                    `;
+                    
+                    data.coverage_gaps.forEach(gap => {
+                        detailsHTML += `
+                            <div style="margin-bottom: 15px; padding: 10px; background: #f8d7da; border-radius: 5px;">
+                                <strong>${gap.issue_key}</strong><br>
+                                <span style="color: #721c24;">Risk Level: ${gap.risk_level}</span><br>
+                                <strong>Gap:</strong> ${gap.gap_description}<br>
+                                <strong>Suggested Test:</strong> ${gap.suggested_test}
+                            </div>
+                        `;
+                    });
+                    
+                    detailsHTML += `</div>`;
+                }
+                
+                detailsHTML += `</div>`;
+                
+                // Show in a modal or alert (simplified version)
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+                    max-width: 80%;
+                    max-height: 80%;
+                    overflow-y: auto;
+                    z-index: 1000;
+                `;
+                
+                modal.innerHTML = detailsHTML + `
+                    <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+                `;
+                
+                document.body.appendChild(modal);
+                
+            } catch (error) {
+                alert('Error loading coverage details: ' + error.message);
+            }
         }
         
         // Initialize page

@@ -6,7 +6,7 @@ Analyze the following JIRA issues for test coverage gaps and generate Robot Fram
 **Analysis Tasks**:
 1. For each JIRA issue, identify what should be tested
 2. Determine if existing test coverage is adequate
-2.1 if the jira issue is covered by the test case in zfrwbot_218, output the related information
+2.1 if the jira issue is covered by the test case in zfrwbot_218, output the related information, must include the test case id, please don't generate the new test cases.
 2.2 if the jira issue not covered by the test cases in zfrwbot_218, generate the new test case based on the scheme defined in zfrwbot_218
 3. Identify high-risk scenarios that need test coverage
 4. Generate Robot Framework test cases for missing coverage
@@ -17,13 +17,31 @@ Generate a JSON file with this structure:
 {
   "analysis_summary": {
     "total_issues": 0,
+    "covered_issues": 0,
+    "uncovered_issues": 0,
     "high_priority_gaps": 0,
     "test_cases_generated": 0,
     "analysis_date": "ISO_DATE"
   },
-  "coverage_gaps": [
+  "covered_issues": [
     {
       "issue_key": "ISSUE-123",
+      "issue_title": "Issue Title",
+      "coverage_status": "Covered",
+      "existing_test_cases": [
+        {
+          "test_file": "path/to/test.robot",
+          "test_case_id": "TLID-12345",
+          "test_name": "Test Name",
+          "confidence": 0.95,
+          "coverage_description": "What this test covers"
+        }
+      ]
+    }
+  ],
+  "coverage_gaps": [
+    {
+      "issue_key": "ISSUE-456",
       "gap_description": "Missing error handling test",
       "risk_level": "High|Medium|Low",
       "suggested_test": "Test scenario description"
@@ -32,13 +50,18 @@ Generate a JSON file with this structure:
   "generated_tests": [
     {
       "test_name": "Test Name",
-      "issue_keys": ["ISSUE-123"],
+      "issue_keys": ["ISSUE-456"],
       "priority": "High|Medium|Low",
       "robot_code": "*** Test Cases ***\nTest Name\n    [Documentation]    Description\n    # Test implementation"
     }
   ]
 }
 ```
+
+**IMPORTANT**: 
+- For covered issues, DO NOT generate new test cases. Only report the existing test coverage.
+- Only generate new test cases for issues that are NOT covered by existing tests.
+- Include test case IDs (TLID-xxxxx) when available for existing tests.
 
 Save the result as `analysis_results_TIMESTAMP.json` in the target_folder.
 ```
