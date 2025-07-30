@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="0.92">
+    <channel>
+        <title>JIRA Issues</title>
+        <item>
+            <key>UN-12686</key>
+            <title>User login fails with special characters in password</title>
+            <summary>Users cannot login when password contains special characters like &amp;, &lt;, &gt;</summary>
+            <description>
+                When users attempt to login with passwords containing special characters such as ampersands (&amp;), less-than (&lt;), or greater-than (&gt;) symbols, the authentication fails with an error message "Invalid credentials".
+                
+                Steps to reproduce:
+                1. Create user account with password containing special characters
+                2. Attempt to login with these credentials
+                3. Login fails with "Invalid credentials" error
+                
+                Expected: Login should succeed with valid credentials regardless of special characters
+                Actual: Login fails due to improper handling of special characters
+            </description>
+            <status>Open</status>
+            <priority>High</priority>
+            <assignee>john.doe@example.com</assignee>
+            <reporter>jane.smith@example.com</reporter>
+            <created>2025-07-25T10:30:00.000+0000</created>
+            <updated>2025-07-30T14:15:00.000+0000</updated>
+            <resolution></resolution>
+            <component>Authentication</component>
+            <component>Security</component>
+            <label>login</label>
+            <label>security</label>
+            <label>special-characters</label>
+            <fixVersion>v2.1.0</fixVersion>
+            <customfields>
+                <customfield id="customfield_10001" key="com.atlassian.jira.plugin.system.customfieldtypes:textfield">
+                    <customfieldname>Test Environment</customfieldname>
+                    <customfieldvalues>
+                        <customfieldvalue>Production</customfieldvalue>
+                    </customfieldvalues>
+                </customfield>
+                <customfield id="customfield_10002" key="com.atlassian.jira.plugin.system.customfieldtypes:select">
+                    <customfieldname>Severity</customfieldname>
+                    <customfieldvalues>
+                        <customfieldvalue>Critical</customfieldvalue>
+                    </customfieldvalues>
+                </customfield>
+            </customfields>
+            <comments>
+                <comment author="tech.lead@example.com" created="2025-07-26T09:00:00.000+0000">
+                    Initial investigation shows the issue is in the password encoding during authentication. The special characters are not being properly escaped before validation.
+                </comment>
+                <comment author="security.team@example.com" created="2025-07-28T15:30:00.000+0000">
+                    This is a security concern as it affects user authentication. Recommend implementing proper input sanitization and encoding for special characters.
+                </comment>
+            </comments>
+        </item>
+        
+        <item>
+            <key>UN-12687</key>
+            <title>File upload size limit not enforced properly</title>
+            <summary>Large files can be uploaded beyond the configured size limit</summary>
+            <description>
+                The system allows users to upload files larger than the configured maximum size limit (10MB). This can lead to storage issues and potential security vulnerabilities.
+                
+                Current behavior:
+                - System shows 10MB limit in UI
+                - Files up to 50MB are actually accepted
+                - No proper error handling for oversized files
+                
+                Impact:
+                - Server storage fills up quickly
+                - Performance degradation during uploads
+                - Potential DoS attack vector
+            </description>
+            <status>In Progress</status>
+            <priority>Medium</priority>
+            <assignee>dev.team@example.com</assignee>
+            <reporter>qa.tester@example.com</reporter>
+            <created>2025-07-28T14:20:00.000+0000</created>
+            <updated>2025-07-30T11:45:00.000+0000</updated>
+            <resolution></resolution>
+            <component>File Upload</component>
+            <component>Validation</component>
+            <label>file-upload</label>
+            <label>validation</label>
+            <label>performance</label>
+            <fixVersion>v2.0.5</fixVersion>
+            <customfields>
+                <customfield id="customfield_10001" key="com.atlassian.jira.plugin.system.customfieldtypes:textfield">
+                    <customfieldname>Test Environment</customfieldname>
+                    <customfieldvalues>
+                        <customfieldvalue>Staging</customfieldvalue>
+                    </customfieldvalues>
+                </customfield>
+                <customfield id="customfield_10002" key="com.atlassian.jira.plugin.system.customfieldtypes:select">
+                    <customfieldname>Severity</customfieldname>
+                    <customfieldvalues>
+                        <customfieldvalue>Major</customfieldvalue>
+                    </customfieldvalues>
+                </customfield>
+            </customfields>
+            <comments>
+                <comment author="dev.team@example.com" created="2025-07-29T10:15:00.000+0000">
+                    Started work on implementing proper file size validation. Will need to check both client-side and server-side validation.
+                </comment>
+            </comments>
+        </item>
+    </channel>
+</rss>
