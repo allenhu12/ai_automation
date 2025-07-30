@@ -430,16 +430,17 @@
         function displayResults(results) {
             const resultsHTML = results.map(result => {
                 const data = result.result_data;
+                const summary = data.analysis_summary || {};
                 return `
                     <div class="result-item">
                         <div class="result-header">
                             <span>📄 ${result.filename}</span>
-                            <span>${data.analysis_date || 'No date'}</span>
+                            <span>${summary.analysis_date || 'No date'}</span>
                         </div>
                         <div class="result-details">
-                            <strong>Issues Analyzed:</strong> ${data.total_issues || 0}<br>
-                            <strong>High Priority Gaps:</strong> ${data.high_priority_gaps || 0}<br>
-                            <strong>Test Cases Generated:</strong> ${data.test_cases_generated || 0}
+                            <strong>Issues Analyzed:</strong> ${summary.total_issues || 0}<br>
+                            <strong>High Priority Gaps:</strong> ${summary.high_priority_gaps || 0}<br>
+                            <strong>Test Cases Generated:</strong> ${summary.test_cases_generated || 0}
                         </div>
                         <div class="download-links">
                             <a href="${result.download_links.json}" target="_blank">📋 Download JSON</a>
