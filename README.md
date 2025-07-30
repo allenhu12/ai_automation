@@ -5,8 +5,20 @@ AI-powered JIRA XML analysis system for Robot Framework test coverage gap identi
 ## Quick Start
 
 1. **Install dependencies:**
+   
+   **Option A - Full installation (recommended):**
    ```bash
    pip install -r requirements.txt
+   ```
+   
+   **Option B - If you have dependency conflicts:**
+   ```bash
+   pip install -r requirements-minimal.txt
+   ```
+   
+   **Option C - Manual installation:**
+   ```bash
+   pip install fastapi uvicorn[standard] python-multipart
    ```
 
 2. **Run the demo:**
@@ -179,6 +191,11 @@ This processes the sample JIRA XML file and shows:
 
 ### Common Issues
 
+**Dependency conflicts during installation:**
+- Try: `pip install -r requirements-minimal.txt`
+- Or manually: `pip install fastapi uvicorn[standard] python-multipart`
+- For Claude Code users: The system works with existing MCP/Claude dependencies
+
 **Upload fails with "Invalid XML format":**
 - Ensure file is valid XML
 - Check for encoding issues
@@ -190,9 +207,9 @@ This processes the sample JIRA XML file and shows:
 - Refresh results page
 
 **Server won't start:**
-- Install dependencies: `pip install -r requirements.txt`
+- Install dependencies using one of the three methods above
 - Check port 8000 is available
-- Verify Python version compatibility
+- Verify Python version compatibility (3.8+)
 
 ### File Locations
 

@@ -1,0 +1,4 @@
+# Minimal requirements - use existing system packages when possible
+fastapi
+uvicorn[standard]
+python-multipart
